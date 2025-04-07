@@ -157,7 +157,7 @@ def show_chat_ui():
             st.session_state.model_history[st.session_state.current_model].append({
                 "past": st.session_state.past.copy(),
                 "generated": st.session_state.generated.copy(),
-                "timestamp": datetime.now().isoformat()  # ✅ Works now
+                "timestamp": datetime.now().isoformat()
             })
 
     # Show messages
