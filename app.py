@@ -5,12 +5,13 @@ from dotenv import load_dotenv
 import httpx
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from google.generativeai import configure as gemini_configure, GenerativeModel
 import groq
 from jose import jwt
 from passlib.context import CryptContext
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +20,7 @@ load_dotenv()
 MODELS = {
     "Llama3-8b-8192": "groq",
     "Llama3-70b-8192": "groq",
-    "gemini-1.5-flash": "gemini",
+    "Gemini-Pro": "gemini",
     "Gemma-7b": "groq",
     "DeepSeek": "deepseek",
     "GPT-3.5": "openai"
@@ -111,8 +112,13 @@ def init_models():
         gemini_configure(api_key=gemini_api_key)
         st.session_state.gemini_model = GenerativeModel("gemini-pro")
     
-    # Initialize DeepSeek (mock - replace with actual API when available)
-    st.session_state.deepseek_client = None
+    # Initialize DeepSeek
+    deepseek_api_key = MODEL_API_KEYS["deepseek"]
+    if deepseek_api_key:
+        st.session_state.deepseek_client = OpenAI(
+            api_key=deepseek_api_key,
+            base_url="https://api.deepseek.com"
+        )
 
 # Authentication UI
 def show_auth_ui():
@@ -151,6 +157,44 @@ def show_auth_ui():
                 else:
                     fake_users_db[new_username] = User(new_username, new_password)
                     st.success("Registration successful! Please login.")
+
+# Generate response
+def generate_response(prompt: str) -> str:
+    model_provider = MODELS[st.session_state.current_model]
+    
+    try:
+        if model_provider == "groq":
+            completion = st.session_state.groq_client.chat.completions.create(
+                model=st.session_state.current_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            return completion.choices[0].message.content
+        
+        elif model_provider == "gemini":
+            response = st.session_state.gemini_model.generate_content(prompt)
+            return response.text
+        
+        elif model_provider == "deepseek":
+            response = st.session_state.deepseek_client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant"},
+                    {"role": "user", "content": prompt}
+                ],
+                stream=False
+            )
+            return response.choices[0].message.content
+        
+        elif model_provider == "openai":
+            # Placeholder for OpenAI API
+            return f"GPT-3.5 response to: {prompt}"
+        
+        else:
+            return f"Model {st.session_state.current_model} not properly configured"
+    
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
 
 # Main Chat UI
 def show_chat_ui():
@@ -200,37 +244,6 @@ def show_chat_ui():
     # Chat container
     response_container = st.container()
     input_container = st.container()
-    
-    # Generate response
-    def generate_response(prompt: str) -> str:
-        model_provider = MODELS[st.session_state.current_model]
-        
-        try:
-            if model_provider == "groq":
-                completion = st.session_state.groq_client.chat.completions.create(
-                    model=st.session_state.current_model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.7
-                )
-                return completion.choices[0].message.content
-            
-            elif model_provider == "gemini":
-                response = st.session_state.gemini_model.generate_content(prompt)
-                return response.text
-            
-            elif model_provider == "deepseek":
-                # Placeholder for DeepSeek API
-                return f"DeepSeek response to: {prompt}"
-            
-            elif model_provider == "openai":
-                # Placeholder for OpenAI API
-                return f"GPT-3.5 response to: {prompt}"
-            
-            else:
-                return f"Model {st.session_state.current_model} not properly configured"
-        
-        except Exception as e:
-            return f"Error generating response: {str(e)}"
     
     # User input form
     with input_container:
