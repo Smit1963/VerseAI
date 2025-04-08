@@ -12,8 +12,8 @@ load_dotenv()
 MODELS = {
     "Llama3-8b-8192": "groq",
     "Llama3-70b-8192": "groq",
-    "Mixtral-8x7b-32768": "groq",
-    "Gemma-7b": "groq"
+    "Mixtral-8x7b-Instruct-v0.1": "groq",
+    "Gemma2-9b-it": "groq",
 }
 
 MODEL_API_KEYS = {
@@ -23,7 +23,7 @@ MODEL_API_KEYS = {
 # Initialize session state
 def init_session_state():
     if 'current_model' not in st.session_state:
-        st.session_state.current_model = "Llama3-8b-8192"
+        st.session_state.current_model = list(MODELS.keys())[0]  # Default to the first model
 
     if 'model_history' not in st.session_state:
         st.session_state.model_history = {model: [] for model in MODELS.keys()}
@@ -37,7 +37,7 @@ def init_session_state():
 # Initialize models
 def init_models():
     # Groq client
-    groq_api_key = MODEL_API_KEYS["groq"]
+    groq_api_key = MODEL_API_KEYS.get("groq")
     if groq_api_key:
         st.session_state.groq_client = groq.Client(api_key=groq_api_key)
     else:
@@ -103,22 +103,44 @@ def show_chat_ui():
     input_container = st.container()
 
     with input_container:
-        with st.form(key='input_form', clear_on_submit=True):
+        with st.form(key='input_form'):  # Removed clear_on_submit for persistent input
             user_input = st.text_area("You:", key='input', height=100)
-            submit_button = st.form_submit_button(label='Send')
+            col1, col2 = st.columns([0.8, 0.2])
+            with col1:
+                # Type here feature is the default behavior of st.text_area
+                pass
+            with col2:
+                submit_button = st.form_submit_button(label='✈️ Send') # Aeroplane emoji
 
-        if submit_button and user_input:
-            output = generate_response(user_input)
+            if submit_button and user_input:
+                output = generate_response(user_input)
+                st.session_state.past.append(user_input)
+                st.session_state.generated.append(output)
 
-            st.session_state.past.append(user_input)
-            st.session_state.generated.append(output)
+                # Save conversation
+                st.session_state.model_history[st.session_state.current_model].append({
+                    "past": st.session_state.past.copy(),
+                    "generated": st.session_state.generated.copy(),
+                    "timestamp": datetime.now().isoformat()
+                })
+                st.session_state["input"] = "" # Clear the input area after sending
 
-            # Save conversation
-            st.session_state.model_history[st.session_state.current_model].append({
-                "past": st.session_state.past.copy(),
-                "generated": st.session_state.generated.copy(),
-                "timestamp": datetime.now().isoformat()
-            })
+        # Implement Enter key to send
+        st.markdown(
+            """
+            <script>
+                const inputElement = document.querySelector('#input_form textarea');
+                inputElement.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        const submitButton = document.querySelector('#input_form button[type="submit"]');
+                        submitButton.click();
+                    }
+                });
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Show messages
     if st.session_state.generated:
