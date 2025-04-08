@@ -10,7 +10,7 @@ load_dotenv()
 
 # Configuration
 MODELS = {
-    "Gemma2-9b-it": "GEMMA",
+    "Gemma2-9b-it": "Google GEMMA",
     "Llama3-8b-8192": "META LLAMA 3",
     "llama-3.1-8b-instant": "META LLAMA 3.1",
     "Llama3-70b-8192": "META LLAMA 3.2",
@@ -59,7 +59,7 @@ def generate_response(prompt: str) -> str:
 # Main Chat UI
 def show_chat_ui():
     st.set_page_config(page_icon="֎", layout="wide", page_title="VerseAI")
-    st.title("֎ VerseAI")  # Added icon to the title as well
+    st.title("֎ VerseAI")  
     st.markdown("<h5 style='font-size: 1em;'>A Multiverse of AI</h5>", unsafe_allow_html=True)
 
     # Model selector
@@ -90,7 +90,7 @@ def show_chat_ui():
         st.subheader("Previous Convos")
         for model_id, history in st.session_state.verseai_model_history.items():
             if history:
-                display_name = MODELS.get(model_id, model_id)  # Get custom name or fallback
+                display_name = MODELS.get(model_id, model_id)  
                 with st.expander(f"{display_name} Chats"):
                     for i, chat in enumerate(history):
                         chat_title = chat.get('timestamp', f'Chat {i+1}')
