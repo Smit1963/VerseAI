@@ -63,16 +63,15 @@ def show_chat_ui():
     st.markdown("<h5 style='font-size: 1em;'>A Multiverse of AI</h5>", unsafe_allow_html=True)
 
     # Model selector
-    current_model = st.selectbox(
+    current_model_display_name = st.selectbox(
         "Pick your AI:",
-        options=list(MODELS.keys()),
-        format_func=lambda x: MODELS[x],  # Use the value (your custom name) for display
-        index=list(MODELS.keys()).index(st.session_state.current_model),
+        options=list(MODELS.values()),
+        index=list(MODELS.values()).index(MODELS.get(st.session_state.current_model, list(MODELS.values())[0])),
         key="model_selector"
     )
 
     # Determine the actual model ID based on the selected display name
-    selected_model_id = [key for key, value in MODELS.items() if value == current_model][0]
+    selected_model_id = [key for key, value in MODELS.items() if value == current_model_display_name][0]
 
     # Check if model changed
     if selected_model_id != st.session_state.current_model:
