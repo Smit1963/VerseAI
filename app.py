@@ -123,7 +123,7 @@ def show_chat_ui():
                     "generated": st.session_state.generated.copy(),
                     "timestamp": datetime.now().isoformat()
                 })
-                st.session_state["input"] = "" # Clear the input area after sending
+                # Removed the problematic line: st.session_state["input"] = ""
 
         # Implement Enter key to send
         st.markdown(
