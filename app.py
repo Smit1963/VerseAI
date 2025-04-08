@@ -9,13 +9,12 @@ import groq
 load_dotenv()
 
 # Configuration
-MODELS = { 
+MODELS = {
     "Gemma2-9b-it": "GEMMA",
     "Llama3-8b-8192": "META LLAMA 3",
     "llama-3.1-8b-instant": "META LLAMA 3.1",
     "Llama3-70b-8192": "META LLAMA 3.2",
     "llama-3.3-70b-versatile": "META LLAMA 3.3",
-    
 }
 MODEL_API_KEYS = {
     "groq": os.getenv("GROQ_API_KEY")
@@ -67,37 +66,42 @@ def show_chat_ui():
     current_model = st.selectbox(
         "Pick your AI:",
         options=list(MODELS.keys()),
+        format_func=lambda x: MODELS[x],  # Use the value (your custom name) for display
         index=list(MODELS.keys()).index(st.session_state.current_model),
         key="model_selector"
     )
 
+    # Determine the actual model ID based on the selected display name
+    selected_model_id = [key for key, value in MODELS.items() if value == current_model][0]
+
     # Check if model changed
-    if current_model != st.session_state.current_model:
-        st.session_state.current_model = current_model
-        st.session_state.verseai_generated = []  
-        st.session_state.verseai_past = []  
+    if selected_model_id != st.session_state.current_model:
+        st.session_state.current_model = selected_model_id
+        st.session_state.verseai_generated = []
+        st.session_state.verseai_past = []
         st.rerun()
 
     # Sidebar
     with st.sidebar:
         st.header("Chat History")
         if st.button("Clear Current Chat"):
-            st.session_state.verseai_generated = []  
-            st.session_state.verseai_past = []  
+            st.session_state.verseai_generated = []
+            st.session_state.verseai_past = []
 
-        st.subheader("Previous Convos") 
-        for model, history in st.session_state.verseai_model_history.items(): 
+        st.subheader("Previous Convos")
+        for model_id, history in st.session_state.verseai_model_history.items():
             if history:
-                with st.expander(f"{model} Chats"):
+                display_name = MODELS.get(model_id, model_id)  # Get custom name or fallback
+                with st.expander(f"{display_name} Chats"):
                     for i, chat in enumerate(history):
                         chat_title = chat.get('timestamp', f'Chat {i+1}')
-                        if st.button(f"{chat_title} - {model}", key=f"load_chat_{model}_{i}"):
-                            st.session_state.current_model = model
-                            st.session_state.verseai_past = chat['past']  
-                            st.session_state.verseai_generated = chat['generated']  
+                        if st.button(f"{chat_title} - {display_name}", key=f"load_chat_{model_id}_{i}"):
+                            st.session_state.current_model = model_id
+                            st.session_state.verseai_past = chat['past']
+                            st.session_state.verseai_generated = chat['generated']
                             st.rerun()
-                    if st.button(f"Delete All {model} Chats", key=f"delete_all_{model}"):
-                        del st.session_state.verseai_model_history[model]
+                    if st.button(f"Delete All {display_name} Chats", key=f"delete_all_{model_id}"):
+                        del st.session_state.verseai_model_history[model_id]
                         st.rerun()
 
     # Chat input/output
@@ -108,7 +112,7 @@ def show_chat_ui():
         prompt = st.chat_input("Wyd? Lemme know...")
         if prompt:
             output = generate_response(prompt)
-            st.session_state.verseai_past.append(prompt) 
+            st.session_state.verseai_past.append(prompt)
             st.session_state.verseai_generated.append(output)
 
             # Save conversation
