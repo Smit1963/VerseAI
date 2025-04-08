@@ -12,7 +12,6 @@ load_dotenv()
 MODELS = {
     "Llama3-8b-8192": "groq",
     "Llama3-70b-8192": "groq",
-    "Mixtral-8x7b-Instruct-v0.1": "groq",
     "Gemma2-9b-it": "groq",
 }
 
@@ -103,44 +102,18 @@ def show_chat_ui():
     input_container = st.container()
 
     with input_container:
-        with st.form(key='input_form'):  # Removed clear_on_submit for persistent input
-            user_input = st.text_area("You:", key='input', height=100)
-            col1, col2 = st.columns([0.8, 0.2])
-            with col1:
-                # Type here feature is the default behavior of st.text_area
-                pass
-            with col2:
-                submit_button = st.form_submit_button(label='✈️ Send') # Aeroplane emoji
+        prompt = st.chat_input("Type here...")
+        if prompt:
+            output = generate_response(prompt)
+            st.session_state.past.append(prompt)
+            st.session_state.generated.append(output)
 
-            if submit_button and user_input:
-                output = generate_response(user_input)
-                st.session_state.past.append(user_input)
-                st.session_state.generated.append(output)
-
-                # Save conversation
-                st.session_state.model_history[st.session_state.current_model].append({
-                    "past": st.session_state.past.copy(),
-                    "generated": st.session_state.generated.copy(),
-                    "timestamp": datetime.now().isoformat()
-                })
-                # Removed the problematic line: st.session_state["input"] = ""
-
-        # Implement Enter key to send
-        st.markdown(
-            """
-            <script>
-                const inputElement = document.querySelector('#input_form textarea');
-                inputElement.addEventListener('keydown', (event) => {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault();
-                        const submitButton = document.querySelector('#input_form button[type="submit"]');
-                        submitButton.click();
-                    }
-                });
-            </script>
-            """,
-            unsafe_allow_html=True,
-        )
+            # Save conversation
+            st.session_state.model_history[st.session_state.current_model].append({
+                "past": st.session_state.past.copy(),
+                "generated": st.session_state.generated.copy(),
+                "timestamp": datetime.now().isoformat()
+            })
 
     # Show messages
     if st.session_state.generated:
