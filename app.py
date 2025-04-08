@@ -1,43 +1,36 @@
 import os
-from datetime import datetime 
+from datetime import datetime
 import streamlit as st
 from streamlit_chat import message
 from dotenv import load_dotenv
-from google.generativeai import configure as gemini_configure, GenerativeModel
 import groq
-from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Configuration
+# Configuration - All available Groq models
 MODELS = {
     "Llama3-8b-8192": "groq",
     "Llama3-70b-8192": "groq",
-    "Gemini-Pro": "gemini",
-    "Gemma-7b": "groq",
-    "DeepSeek": "deepseek",
-    "GPT-3.5": "openai"
+    "Mixtral-8x7b-32768": "groq",
+    "Gemma-7b": "groq"
 }
 
 MODEL_API_KEYS = {
-    "groq": os.getenv("GROQ_API_KEY"),
-    "gemini": os.getenv("GEMINI_API_KEY"),
-    "deepseek": os.getenv("DEEPSEEK_API_KEY"),
-    "openai": os.getenv("OPENAI_API_KEY")
+    "groq": os.getenv("GROQ_API_KEY")
 }
 
 # Initialize session state
 def init_session_state():
     if 'current_model' not in st.session_state:
         st.session_state.current_model = "Llama3-8b-8192"
-    
+
     if 'model_history' not in st.session_state:
         st.session_state.model_history = {model: [] for model in MODELS.keys()}
-    
+
     if 'generated' not in st.session_state:
         st.session_state.generated = []
-    
+
     if 'past' not in st.session_state:
         st.session_state.past = []
 
@@ -47,63 +40,26 @@ def init_models():
     groq_api_key = MODEL_API_KEYS["groq"]
     if groq_api_key:
         st.session_state.groq_client = groq.Client(api_key=groq_api_key)
-    
-    # Gemini
-    gemini_api_key = MODEL_API_KEYS["gemini"]
-    if gemini_api_key:
-        gemini_configure(api_key=gemini_api_key)
-        st.session_state.gemini_model = GenerativeModel("gemini-pro")
-    
-    # DeepSeek
-    deepseek_api_key = MODEL_API_KEYS["deepseek"]
-    if deepseek_api_key:
-        st.session_state.deepseek_client = OpenAI(
-            api_key=deepseek_api_key,
-            base_url="https://api.deepseek.com"
-        )
+    else:
+        st.error("GROQ_API_KEY not found in environment variables")
 
 # Generate response
 def generate_response(prompt: str) -> str:
-    model_provider = MODELS[st.session_state.current_model]
-
     try:
-        if model_provider == "groq":
-            completion = st.session_state.groq_client.chat.completions.create(
-                model=st.session_state.current_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
-            )
-            return completion.choices[0].message.content
+        completion = st.session_state.groq_client.chat.completions.create(
+            model=st.session_state.current_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        return completion.choices[0].message.content
 
-        elif model_provider == "gemini":
-            response = st.session_state.gemini_model.generate_content(prompt)
-            return response.text
-
-        elif model_provider == "deepseek":
-            response = st.session_state.deepseek_client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant"},
-                    {"role": "user", "content": prompt}
-                ],
-                stream=False
-            )
-            return response.choices[0].message.content
-
-        elif model_provider == "openai":
-            # Placeholder for OpenAI (update if using real API)
-            return f"GPT-3.5 response to: {prompt}"
-
-        else:
-            return f"Model {st.session_state.current_model} not properly configured"
-    
     except Exception as e:
         return f"Error generating response: {str(e)}"
 
 # Main Chat UI
 def show_chat_ui():
-    st.title("VerseAI")
-    st.markdown("### A Multiverse of AI Models")
+    st.title("Groq AI Chat")
+    st.markdown("### Fast LLMs powered by Groq")
 
     # Model selector
     current_model = st.selectbox(
@@ -131,12 +87,16 @@ def show_chat_ui():
         for model, history in st.session_state.model_history.items():
             if history:
                 with st.expander(f"{model} Chats"):
-                    for i, chat in enumerate(history[-5:]):
-                        if st.button(f"Chat {i+1} - {model}"):
+                    for i, chat in enumerate(history):
+                        chat_title = chat.get('timestamp', f'Chat {i+1}')
+                        if st.button(f"{chat_title} - {model}", key=f"load_chat_{model}_{i}"):
                             st.session_state.current_model = model
                             st.session_state.past = chat['past']
                             st.session_state.generated = chat['generated']
                             st.rerun()
+                    if st.button(f"Delete All {model} Chats", key=f"delete_all_{model}"):
+                        del st.session_state.model_history[model]
+                        st.rerun()
 
     # Chat input/output
     response_container = st.container()
