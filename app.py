@@ -13,6 +13,8 @@ MODELS = {
     "Llama3-8b-8192": "groq",
     "Llama3-70b-8192": "groq",
     "Gemma2-9b-it": "groq",
+    "llama-3.3-70b-versatile": "groq",
+    "llama-3.1-8b-instant": "groq",
 }
 
 MODEL_API_KEYS = {
@@ -22,16 +24,16 @@ MODEL_API_KEYS = {
 # Initialize session state
 def init_session_state():
     if 'current_model' not in st.session_state:
-        st.session_state.current_model = list(MODELS.keys())[0]  # Default to the first model
+        st.session_state.current_model = list(MODELS.keys())[0]
 
-    if 'model_history' not in st.session_state:
-        st.session_state.model_history = {model: [] for model in MODELS.keys()}
+    if 'verseai_model_history' not in st.session_state:
+        st.session_state.verseai_model_history = {model: [] for model in MODELS.keys()}
 
-    if 'generated' not in st.session_state:
-        st.session_state.generated = []
+    if 'verseai_generated' not in st.session_state:
+        st.session_state.verseai_generated = []
 
-    if 'past' not in st.session_state:
-        st.session_state.past = []
+    if 'verseai_past' not in st.session_state:
+        st.session_state.verseai_past = []
 
 # Initialize models
 def init_models():
@@ -57,12 +59,13 @@ def generate_response(prompt: str) -> str:
 
 # Main Chat UI
 def show_chat_ui():
-    st.title("Groq AI Chat")
-    st.markdown("### Fast LLMs powered by Groq")
+    st.set_page_config(page_icon="֎", layout="wide", page_title="VerseAI")
+    st.title("֎ VerseAI")  # Added icon to the title as well
+    st.markdown("<h5 style='font-size: 1em;'>A Multiverse of AI</h5>", unsafe_allow_html=True)
 
     # Model selector
     current_model = st.selectbox(
-        "Select AI Model",
+        "Pick your AI:",
         options=list(MODELS.keys()),
         index=list(MODELS.keys()).index(st.session_state.current_model),
         key="model_selector"
@@ -71,30 +74,30 @@ def show_chat_ui():
     # Check if model changed
     if current_model != st.session_state.current_model:
         st.session_state.current_model = current_model
-        st.session_state.generated = []
-        st.session_state.past = []
+        st.session_state.verseai_generated = []  
+        st.session_state.verseai_past = []  
         st.rerun()
 
     # Sidebar
     with st.sidebar:
         st.header("Chat History")
         if st.button("Clear Current Chat"):
-            st.session_state.generated = []
-            st.session_state.past = []
+            st.session_state.verseai_generated = []  
+            st.session_state.verseai_past = []  
 
-        st.subheader("Previous Conversations")
-        for model, history in st.session_state.model_history.items():
+        st.subheader("Previous Convos") 
+        for model, history in st.session_state.verseai_model_history.items(): 
             if history:
                 with st.expander(f"{model} Chats"):
                     for i, chat in enumerate(history):
                         chat_title = chat.get('timestamp', f'Chat {i+1}')
                         if st.button(f"{chat_title} - {model}", key=f"load_chat_{model}_{i}"):
                             st.session_state.current_model = model
-                            st.session_state.past = chat['past']
-                            st.session_state.generated = chat['generated']
+                            st.session_state.verseai_past = chat['past']  
+                            st.session_state.verseai_generated = chat['generated']  
                             st.rerun()
                     if st.button(f"Delete All {model} Chats", key=f"delete_all_{model}"):
-                        del st.session_state.model_history[model]
+                        del st.session_state.verseai_model_history[model]
                         st.rerun()
 
     # Chat input/output
@@ -102,25 +105,25 @@ def show_chat_ui():
     input_container = st.container()
 
     with input_container:
-        prompt = st.chat_input("Type here...")
+        prompt = st.chat_input("Wyd? Lemme know...")
         if prompt:
             output = generate_response(prompt)
-            st.session_state.past.append(prompt)
-            st.session_state.generated.append(output)
+            st.session_state.verseai_past.append(prompt) 
+            st.session_state.verseai_generated.append(output)
 
             # Save conversation
-            st.session_state.model_history[st.session_state.current_model].append({
-                "past": st.session_state.past.copy(),
-                "generated": st.session_state.generated.copy(),
+            st.session_state.verseai_model_history[st.session_state.current_model].append({
+                "past": st.session_state.verseai_past.copy(),
+                "generated": st.session_state.verseai_generated.copy(),
                 "timestamp": datetime.now().isoformat()
             })
 
     # Show messages
-    if st.session_state.generated:
+    if st.session_state.verseai_generated:
         with response_container:
-            for i in range(len(st.session_state.generated)):
-                message(st.session_state.past[i], is_user=True, key=str(i) + '_user')
-                message(st.session_state.generated[i], key=str(i))
+            for i in range(len(st.session_state.verseai_generated)):
+                message(st.session_state.verseai_past[i], is_user=True, key=str(i) + '_user')
+                message(st.session_state.verseai_generated[i], key=str(i))
 
 # Run the app
 def main():
