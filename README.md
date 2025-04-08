@@ -1,7 +1,7 @@
 # ֎ VerseAI
 
 <div align="center">
-  <img src="banner.png" width="1000">
+  <img src="banner.png" width="1500">
 </div>
 
 An interactive platform powered by Groq that allows users to explore and chat with various cutting-edge AI models, offering a glimpse into the diverse landscape of artificial intelligence.
