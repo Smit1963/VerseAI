@@ -8,15 +8,15 @@ import groq
 # Load environment variables
 load_dotenv()
 
-# Configuration - All available Groq models
-MODELS = {
-    "Llama3-8b-8192": "groq",
-    "Llama3-70b-8192": "groq",
-    "Gemma2-9b-it": "groq",
-    "llama-3.3-70b-versatile": "groq",
-    "llama-3.1-8b-instant": "groq",
+# Configuration
+MODELS = { 
+    "Gemma2-9b-it": "GEMMA",
+    "Llama3-8b-8192": "META LLAMA 3",
+    "llama-3.1-8b-instant": "META LLAMA 3.1",
+    "Llama3-70b-8192": "META LLAMA 3.2",
+    "llama-3.3-70b-versatile": "META LLAMA 3.3",
+    
 }
-
 MODEL_API_KEYS = {
     "groq": os.getenv("GROQ_API_KEY")
 }
