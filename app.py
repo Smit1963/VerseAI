@@ -58,7 +58,7 @@ def generate_response(prompt: str) -> str:
 
 # Main Chat UI
 def show_chat_ui():
-    st.set_page_config(page_icon="֎", layout="wide", page_title="VerseAI")
+    st.set_page_config(page_icon=LOGO.png, layout="wide", page_title="VerseAI")
     st.title("֎ VerseAI")  
     st.markdown("<h5 style='font-size: 1em;'>A Multiverse of AI</h5>", unsafe_allow_html=True)
 
